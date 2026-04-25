@@ -2,11 +2,13 @@
 
 Download your **resume.io** resume as a pixel-perfect, high-quality PDF — with all hyperlinks fully preserved. No watermarks, no sign-up, no tracking.
 
-**Demo:** _[🔗 https://resume-io-download.vercel.app/]_
+# 🚀 Live Demo
+
+[![Click Here](https://img.shields.io/badge/Click%20Here-blue?style=for-the-badge)](https://resume-io-download.vercel.app/)
 
 ---
 
-## Features
+## 🚀 Features
 
 - **One-click token fetch** — automatically pulls your rendering token if you're logged into resume.io in the same browser
 - **Guided flow** — if automatic fetch fails, a step-by-step modal walks you through copying the token manually
@@ -49,7 +51,7 @@ npm start
 
 ---
 
-## How It Works
+## 🛠️ How It Works
 
 1. Click **Get My Rendering Token**
 2. If you're logged in, the token is auto-populated
@@ -58,7 +60,7 @@ npm start
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Layer          | Technology                  |
 | -------------- | --------------------------- |
@@ -70,7 +72,7 @@ npm start
 
 ---
 
-## Author
+## 📦 Author ✅
 
 **Abhijeet Kumar**
 
