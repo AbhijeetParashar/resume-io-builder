@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://resume-io-builder.vercel.app"),
+  metadataBase: new URL("https://resume-io-download.vercel.app/"),
   title: {
     default: "Resume.io PDF Downloader",
     template: "%s | Resume.io PDF Downloader",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://resume-io-builder.vercel.app",
+    url: "https://resume-io-download.vercel.app/",
     siteName: "Resume.io PDF Downloader",
     title: "Resume.io PDF Downloader — by Abhijeet Kumar",
     description:
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://resume-io-builder.vercel.app",
+    canonical: "https://resume-io-download.vercel.app/",
   },
 };
 

@@ -2,7 +2,7 @@
 
 Download your **resume.io** resume as a pixel-perfect, high-quality PDF — with all hyperlinks fully preserved. No watermarks, no sign-up, no tracking.
 
-**Demo:** _[🔗 Live link coming soon — will be updated after Vercel deployment]_
+**Demo:** _[🔗 https://resume-io-download.vercel.app/]_
 
 ---
 
