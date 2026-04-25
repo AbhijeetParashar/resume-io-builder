@@ -51,7 +51,7 @@ npm start
 
 ## How It Works
 
-1. Click **Get My Rendering Token** — the app attempts to call `https://resume.io/api/app/resumes` with your browser session
+1. Click **Get My Rendering Token**
 2. If you're logged in, the token is auto-populated
 3. If not, a modal guides you to open the endpoint in a new tab and copy the token manually
 4. Click **Download Resume** — the server fetches the resume images via resume.io's SSR API, assembles a PDF using `pdf-lib`, embeds link annotations, and streams the file back to your browser
@@ -60,21 +60,13 @@ npm start
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 16 (App Router) |
-| Styling | Tailwind CSS v4 + Shadcn UI |
-| PDF generation | pdf-lib |
-| Language | TypeScript |
-| Font | Inter (Google Fonts) |
-
----
-
-## Deploy on Vercel
-
-Click the button below to deploy your own instance:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/AbhijeetParashar/resume-io-builder)
+| Layer          | Technology                  |
+| -------------- | --------------------------- |
+| Framework      | Next.js 16 (App Router)     |
+| Styling        | Tailwind CSS v4 + Shadcn UI |
+| PDF generation | pdf-lib                     |
+| Language       | TypeScript                  |
+| Font           | Inter (Google Fonts)        |
 
 ---
 
@@ -82,16 +74,12 @@ Click the button below to deploy your own instance:
 
 **Abhijeet Kumar**
 
-| Platform | Link |
-|---|---|
-| Website | [iamabhijeet.com](https://www.iamabhijeet.com/) |
-| GitHub | [@AbhijeetParashar](https://github.com/AbhijeetParashar) |
-| LinkedIn | [abhijeetkumar29](https://www.linkedin.com/in/abhijeetkumar29/) |
-| X (Twitter) | [@AbhijeetParash7](https://x.com/AbhijeetParash7) |
-| Instagram | [@bas_kar_avi](https://www.instagram.com/bas_kar_avi/) |
+| Platform    | Link                                                            |
+| ----------- | --------------------------------------------------------------- |
+| Website     | [iamabhijeet.com](https://www.iamabhijeet.com/)                 |
+| GitHub      | [@AbhijeetParashar](https://github.com/AbhijeetParashar)        |
+| LinkedIn    | [abhijeetkumar29](https://www.linkedin.com/in/abhijeetkumar29/) |
+| X (Twitter) | [@AbhijeetParash7](https://x.com/AbhijeetParash7)               |
+| Instagram   | [@bas_kar_avi](https://www.instagram.com/bas_kar_avi/)          |
 
 ---
-
-## License
-
-MIT — free to use, modify, and distribute.
