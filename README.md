@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Resume.io PDF Downloader
+
+Download your **resume.io** resume as a pixel-perfect, high-quality PDF — with all hyperlinks fully preserved. No watermarks, no sign-up, no tracking.
+
+**Demo:** _[🔗 Live link coming soon — will be updated after Vercel deployment]_
+
+---
+
+## Features
+
+- **One-click token fetch** — automatically pulls your rendering token if you're logged into resume.io in the same browser
+- **Guided flow** — if automatic fetch fails, a step-by-step modal walks you through copying the token manually
+- **Link-preserved PDF** — all URLs in your resume remain clickable in the final PDF
+- **3000 px render quality** — crisp output suitable for printing or sharing
+- **Multi-resume support** — pick from any resume in your account via a dropdown
+- **No dependencies on your end** — paste token → download PDF, done
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm / yarn / pnpm / bun
+
+### Local development
 
 ```bash
+# Clone the repo
+git clone https://github.com/AbhijeetParashar/resume-io-builder.git
+cd resume-io-builder
+
+# Install dependencies
+npm install
+
+# Start the dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build for production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## How It Works
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Click **Get My Rendering Token** — the app attempts to call `https://resume.io/api/app/resumes` with your browser session
+2. If you're logged in, the token is auto-populated
+3. If not, a modal guides you to open the endpoint in a new tab and copy the token manually
+4. Click **Download Resume** — the server fetches the resume images via resume.io's SSR API, assembles a PDF using `pdf-lib`, embeds link annotations, and streams the file back to your browser
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Styling | Tailwind CSS v4 + Shadcn UI |
+| PDF generation | pdf-lib |
+| Language | TypeScript |
+| Font | Inter (Google Fonts) |
+
+---
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Click the button below to deploy your own instance:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/AbhijeetParashar/resume-io-builder)
+
+---
+
+## Author
+
+**Abhijeet Kumar**
+
+| Platform | Link |
+|---|---|
+| Website | [iamabhijeet.com](https://www.iamabhijeet.com/) |
+| GitHub | [@AbhijeetParashar](https://github.com/AbhijeetParashar) |
+| LinkedIn | [abhijeetkumar29](https://www.linkedin.com/in/abhijeetkumar29/) |
+| X (Twitter) | [@AbhijeetParash7](https://x.com/AbhijeetParash7) |
+| Instagram | [@bas_kar_avi](https://www.instagram.com/bas_kar_avi/) |
+
+---
+
+## License
+
+MIT — free to use, modify, and distribute.
