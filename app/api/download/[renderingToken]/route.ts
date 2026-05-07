@@ -1,5 +1,6 @@
 import { PDFDocument, PDFName, PDFString, PDFArray, PDFRef } from "pdf-lib";
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " +
@@ -8,8 +9,20 @@ const USER_AGENT =
 
 const METADATA_URL =
   "https://ssr.resume.tools/meta/{token}?cache={cache}";
-const IMAGE_URL =
-  "https://ssr.resume.tools/to-image/{token}-{page}.{ext}?cache={cache}&size={size}";
+
+// width=1800 returns native 1800×2329 px JPEG (~211 DPI); width≥2400 falls back to placeholder
+const IMAGE_URL_HI =
+  "https://ssr.resume.tools/to-image/{token}-{page}.jpeg?cache={cache}&image_size=3000&width=1800";
+
+// Fallback without width — SSR may only have width=1800 cached for page 1
+const IMAGE_URL_LO =
+  "https://ssr.resume.tools/to-image/{token}-{page}.jpeg?cache={cache}&image_size=3000";
+
+// Images smaller than this are ssr.resume.tools placeholder tiles, not real pages
+const PLACEHOLDER_THRESHOLD_BYTES = 15_000;
+
+// Safety cap so we never loop forever on a malformed token
+const MAX_PAGES = 20;
 
 interface PageLink {
   url: string;
@@ -21,11 +34,13 @@ interface PageLink {
 
 interface PageMeta {
   viewport: { width: number; height: number };
-  links: PageLink[];
+  links?: PageLink[];
 }
 
+const DEFAULT_VIEWPORT = { width: 612, height: 792 };
+
 function getCacheDate(): string {
-  return new Date().toISOString().slice(0, -10) + "Z";
+  return new Date().toISOString().slice(0, 13) + "Z";
 }
 
 async function resumeFetch(url: string): Promise<Response> {
@@ -36,59 +51,86 @@ async function resumeFetch(url: string): Promise<Response> {
   return res;
 }
 
-async function buildPdf(
+function buildImageUrl(template: string, renderingToken: string, pageNumber: number, cache: string): string {
+  return template
+    .replace("{token}", renderingToken)
+    .replace("{page}", String(pageNumber))
+    .replace("{cache}", cache);
+}
+
+async function fetchImageBytes(
   renderingToken: string,
-  imageSize: number,
-  extension: "jpeg" | "png" | "webp"
+  pageNumber: number,
+  cache: string
 ): Promise<Uint8Array> {
+  const hiBytes = new Uint8Array(
+    await (await resumeFetch(buildImageUrl(IMAGE_URL_HI, renderingToken, pageNumber, cache))).arrayBuffer()
+  );
+  if (hiBytes.length >= PLACEHOLDER_THRESHOLD_BYTES) return hiBytes;
+
+  // width=1800 may not be cached for pages beyond page 1 — fall back to default width
+  return new Uint8Array(
+    await (await resumeFetch(buildImageUrl(IMAGE_URL_LO, renderingToken, pageNumber, cache))).arrayBuffer()
+  );
+}
+
+async function normalizeToJpeg(imgBytes: Uint8Array): Promise<Uint8Array> {
+  const isWebP =
+    imgBytes[0] === 0x52 && imgBytes[1] === 0x49 &&
+    imgBytes[2] === 0x46 && imgBytes[3] === 0x46 &&
+    imgBytes[8] === 0x57 && imgBytes[9] === 0x45 &&
+    imgBytes[10] === 0x42 && imgBytes[11] === 0x50;
+
+  if (isWebP) {
+    return new Uint8Array(
+      await sharp(imgBytes).jpeg({ quality: 97 }).toBuffer()
+    );
+  }
+  return imgBytes;
+}
+
+async function buildPdf(renderingToken: string): Promise<Uint8Array> {
   const cache = getCacheDate();
 
   const metaRes = await resumeFetch(
     METADATA_URL.replace("{token}", renderingToken).replace("{cache}", cache)
   );
   const metaJson: { pages: PageMeta[] } = await metaRes.json();
-  const pages = metaJson.pages;
+  const metaPages: PageMeta[] = metaJson.pages ?? [];
 
   const pdfDoc = await PDFDocument.create();
 
-  for (let i = 0; i < pages.length; i++) {
-    const pageMeta = pages[i];
-    const { viewport, links } = pageMeta;
+  for (let i = 0; i < MAX_PAGES; i++) {
+    const imgBytes = await fetchImageBytes(renderingToken, i + 1, cache);
 
-    const imgUrl = IMAGE_URL.replace("{token}", renderingToken)
-      .replace("{page}", String(i + 1))
-      .replace("{ext}", extension)
-      .replace("{cache}", cache)
-      .replace("{size}", String(imageSize));
+    // Stop when we receive a placeholder tile instead of a real resume page
+    if (imgBytes.length < PLACEHOLDER_THRESHOLD_BYTES) break;
 
-    const imgRes = await resumeFetch(imgUrl);
-    const imgBytes = await imgRes.arrayBuffer();
+    // SSR returns 1800×~2329 px JPEG natively at width=1800 — no upscaling needed
+    const jpegBytes = await normalizeToJpeg(imgBytes);
+    const embeddedImg = await pdfDoc.embedJpg(jpegBytes);
 
-    const embeddedImg =
-      extension === "png"
-        ? await pdfDoc.embedPng(imgBytes)
-        : await pdfDoc.embedJpg(imgBytes);
+    // PDF page matches the viewport in pts; the hi-res image fills it exactly (~211 DPI)
+    const viewport = metaPages[i]?.viewport ?? DEFAULT_VIEWPORT;
+    const page = pdfDoc.addPage([viewport.width, viewport.height]);
+    page.drawImage(embeddedImg, {
+      x: 0,
+      y: 0,
+      width: viewport.width,
+      height: viewport.height,
+    });
 
-    const { width: imgW, height: imgH } = embeddedImg;
-    const page = pdfDoc.addPage([imgW, imgH]);
-    page.drawImage(embeddedImg, { x: 0, y: 0, width: imgW, height: imgH });
-
-    // Scale link coords from viewport space to image/PDF space and flip y-axis
-    const scaleX = imgW / viewport.width;
-    const scaleY = imgH / viewport.height;
+    // Links are already in viewport-pt space; only Y-axis needs flipping
+    const links = metaPages[i]?.links ?? [];
     const annotRefs: PDFRef[] = [];
 
     for (const link of links) {
-      const pdfX = link.x * scaleX;
-      const pdfW = link.w * scaleX;
-      const pdfH = link.h * scaleY;
-      // PDF origin is bottom-left; viewport origin is top-left
-      const pdfY = imgH - link.y * scaleY - pdfH;
+      const pdfY = viewport.height - link.y - link.h;
 
       const annotDict = pdfDoc.context.obj({
         Type: "Annot",
         Subtype: "Link",
-        Rect: [pdfX, pdfY, pdfX + pdfW, pdfY + pdfH],
+        Rect: [link.x, pdfY, link.x + link.w, pdfY + link.h],
         A: {
           Type: "Action",
           S: "URI",
@@ -107,11 +149,15 @@ async function buildPdf(
     }
   }
 
+  if (pdfDoc.getPageCount() === 0) {
+    throw new Error("No pages rendered — the rendering token may be invalid or expired.");
+  }
+
   return pdfDoc.save();
 }
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ renderingToken: string }> }
 ) {
   const { renderingToken } = await params;
@@ -123,21 +169,13 @@ export async function POST(
     );
   }
 
-  const { searchParams } = new URL(request.url);
-  const imageSize = Math.max(1, parseInt(searchParams.get("image_size") ?? "3000", 10) || 3000);
-  const extParam = searchParams.get("extension") ?? "jpeg";
-  const extension = (["jpeg", "png", "webp"].includes(extParam) ? extParam : "jpeg") as
-    | "jpeg"
-    | "png"
-    | "webp";
-
   try {
-    const pdfBytes = await buildPdf(renderingToken, imageSize, extension);
+    const pdfBytes = await buildPdf(renderingToken);
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${renderingToken}.pdf"`,
+        "Content-Disposition": `attachment; filename="resume-${renderingToken}.pdf"`,
       },
     });
   } catch (err) {
